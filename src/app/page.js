@@ -1,101 +1,109 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { Groq } from "groq-sdk";
+
+const groq = new Groq({ apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY,dangerouslyAllowBrowser : true });
+
+// Utility function for sanitizing user inputs
+const sanitizeInput = (input) => {
+  const sanitized = input.trim().replace(/<[^>]*>?/gm, ''); // Remove HTML tags
+  return sanitized.length > 200 ? sanitized.substring(0, 200) : sanitized; // Limit to 200 chars
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [source, setSource] = useState('');
+  const [destination, setDestination] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [budget, setBudget] = useState('');
+  const [travellers, setTravellers] = useState('');
+  const [preferences, setPreferences] = useState('');
+  const [response, setResponse] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const validateInputs = () => {
+    if (!source || !destination) return "Source and Destination are required.";
+    if (new Date(startDate) > new Date(endDate)) return "Start date cannot be after end date.";
+    if (budget <= 0) return "Budget must be a positive number.";
+    if (travellers <= 0) return "Number of travellers must be at least 1.";
+    return "";
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setResponse('');
+
+    const validationError = validateInputs();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setLoading(true);
+
+    const userPrompt = `Plan a detailed trip itinerary based on the following details:
+    - Source Location: ${sanitizeInput(source)}
+    - Destination Location: ${sanitizeInput(destination)}
+    - Travel Dates: ${sanitizeInput(startDate)} to ${sanitizeInput(endDate)}
+    - Budget: ${sanitizeInput(budget)}
+    - Number of Travellers: ${sanitizeInput(travellers)}
+    - Interests and Preferences: ${sanitizeInput(preferences)}
+
+    Provide suggestions for transportation, accommodation, sightseeing, activities, local cuisine, and any travel tips. Ensure the plan fits within the budget and aligns with the preferences.`;
+
+    try {
+      const aiResponse = await groq.chat.completions.create({
+        messages: [{ role: "user", content: userPrompt }],
+        model: "mixtral-8x7b-32768",
+      });
+
+      const aiContent = aiResponse.choices[0]?.message?.content;
+      setResponse(aiContent || "No response received. Please try again.");
+    } catch (err) {
+      console.error("Error generating trip plan:", err);
+      setError("An unexpected error occurred. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
+      <h1 className="text-3xl font-bold mb-6">AI Travel Planner 🧳</h1>
+
+      <form onSubmit={handleSubmit} className="bg-white shadow-2xl rounded-2xl p-6 w-full max-w-md space-y-4">
+        {error && (
+          <div className="bg-red-100 text-red-700 p-3 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        <input type="text" placeholder="Source Location" value={source} onChange={(e) => setSource(sanitizeInput(e.target.value))} className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" required />
+        <input type="text" placeholder="Destination Location" value={destination} onChange={(e) => setDestination(sanitizeInput(e.target.value))} className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" required />
+
+        <div className="flex space-x-2">
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-1/2 p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" required />
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-1/2 p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" required />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <input type="number" placeholder="Budget (USD)" value={budget} onChange={(e) => setBudget(e.target.value)} className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" min="1" required />
+        <input type="number" placeholder="Number of Travellers" value={travellers} onChange={(e) => setTravellers(e.target.value)} className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" min="1" required />
+        <textarea placeholder="Interests and Preferences (e.g., adventure, food, museums)" value={preferences} onChange={(e) => setPreferences(sanitizeInput(e.target.value))} className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" rows="4" required />
+
+        <button type="submit" className="w-full bg-blue-500 text-white py-3 rounded-xl hover:bg-blue-600 transition duration-200" disabled={loading}>
+          {loading ? 'Planning Trip...' : 'Plan My Trip'}
+        </button>
+      </form>
+
+      {response && (
+        <div className="bg-white mt-6 shadow-xl rounded-2xl p-6 w-full max-w-lg">
+          <h2 className="text-xl font-semibold mb-2">Your Trip Plan:</h2>
+          <p className="text-gray-700 whitespace-pre-wrap">{response}</p>
+        </div>
+      )}
     </div>
   );
-}
+} 
