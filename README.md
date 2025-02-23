@@ -2,7 +2,7 @@
 
 An AI-powered travel planning web app that generates personalized trip itineraries based on user inputs like source, destination, travel dates, budget, preferences, and more. 
 
-![AI Travel Planner Screenshot](https://via.placeholder.com/800x400)
+![image](https://github.com/user-attachments/assets/578e3f42-23bb-4386-ba1c-de40c2b2f614)
 
 ---
 
