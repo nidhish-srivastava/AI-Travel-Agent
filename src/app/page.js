@@ -70,7 +70,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-      <h1 className="text-3xl font-bold mb-6">AI Travel Planner 🧳</h1>
+      <h1 className="text-3xl font-bold mb-6">AI Travel Planner</h1>
 
       <form onSubmit={handleSubmit} className="bg-white shadow-2xl rounded-2xl p-6 w-full max-w-md space-y-4">
         {error && (
