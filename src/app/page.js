@@ -12,7 +12,6 @@ const sanitizeInput = (input) => {
 };
 
 export default function Home() {
-  const [source, setSource] = useState('');
   const [destination, setDestination] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -24,7 +23,7 @@ export default function Home() {
   const [error, setError] = useState('');
 
   const validateInputs = () => {
-    if (!source || !destination) return "Source and Destination are required.";
+    if (!destination) return "Destination is required";
     if (new Date(startDate) > new Date(endDate)) return "Start date cannot be after end date.";
     if (budget <= 0) return "Budget must be a positive number.";
     if (travellers <= 0) return "Number of travellers must be at least 1.";
@@ -45,7 +44,6 @@ export default function Home() {
     setLoading(true);
 
     const userPrompt = `Plan a detailed trip itinerary based on the following details:
-    - Source Location: ${sanitizeInput(source)}
     - Destination Location: ${sanitizeInput(destination)}
     - Travel Dates: ${sanitizeInput(startDate)} to ${sanitizeInput(endDate)}
     - Budget: ${sanitizeInput(budget)}
@@ -81,7 +79,6 @@ export default function Home() {
           </div>
         )}
 
-        <input type="text" placeholder="Source Location" value={source} onChange={(e) => setSource(sanitizeInput(e.target.value))} className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" required />
         <input type="text" placeholder="Destination Location" value={destination} onChange={(e) => setDestination(sanitizeInput(e.target.value))} className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" required />
 
         <div className="flex space-x-2">
