@@ -55,7 +55,7 @@ export default function Home() {
     try {
       const aiResponse = await groq.chat.completions.create({
         messages: [{ role: "user", content: userPrompt }],
-        model: "mixtral-8x7b-32768",
+        model: "llama-3.3-70b-versatile",
       });
 
       const aiContent = aiResponse.choices[0]?.message?.content;
